@@ -15,6 +15,7 @@ public class Intake extends SubsystemBase {
     static final double INTAKE_HOLD_POWER = 0.07; // Percent output for holding
     static final int RELEASE_POWER_LIMIT = 0; // Speed for releasing
     private final CANSparkMax intake;
+    private ItemType currItemType;
 
     public Intake() {
         intake = new CANSparkMax(Constants.IntakeConstants.kMotorPort, MotorType.kBrushed);
@@ -26,24 +27,25 @@ public class Intake extends SubsystemBase {
     return run(() -> {
         System.out.println("Intake " + itemType + " in progress");
         double speed = itemType==ItemType.Cube ? 1.0 : -1.0;
+        currItemType = itemType;
         intake.set(speed);
         intake.setSmartCurrentLimit(INTAKE_CURRENT_LIMIT_A);
     }).withName("Intake");
   }
 
-  public CommandBase holdCommand(ItemType itemType) {
+  public CommandBase holdCommand() {
     return run(() -> {
-        System.out.println(itemType + " Holding in progress");
-        double speed = itemType==ItemType.Cube ? 0.07 : -0.07;
+        System.out.println(currItemType + " Holding in progress");
+        double speed = currItemType==ItemType.Cube ? 0.07 : -0.07;
         intake.set(speed);
         intake.setSmartCurrentLimit(INTAKE_HOLD_CURRENT_LIMIT_A);
     }).withName("Hold");
   }
 
-  public CommandBase releaseCommand(ItemType itemType) {
+  public CommandBase releaseCommand() {
     return run(() -> {
-        System.out.println(itemType + " Releasing...");
-        double speed = itemType==ItemType.Cube ? -1.0 : 1.0;
+        System.out.println(currItemType + " Releasing...");
+        double speed = currItemType==ItemType.Cube ? -1.0 : 1.0;
         intake.set(speed);
         intake.setSmartCurrentLimit(RELEASE_POWER_LIMIT);
     }).withName("Release");
@@ -52,6 +54,7 @@ public class Intake extends SubsystemBase {
   public CommandBase stopCommand() {
     return runOnce(() -> {
         System.out.println("Stopping...");
+        currItemType = null;
         int speed = 0;
         intake.set(speed);
     }).withName("Stop");

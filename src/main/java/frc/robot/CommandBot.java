@@ -41,17 +41,17 @@ public class CommandBot {
     
     // Deploy the intake with the triangle button for the cone
     teleOpController.triangle().whileTrue(m_intake.intakeCommand(ItemType.Cone));
-    teleOpController.triangle().onFalse(m_intake.holdCommand(ItemType.Cone));
+    teleOpController.triangle().onFalse(m_intake.holdCommand());
     // Release the intake with the cross button for the cube
-    teleOpController.cross().whileTrue(m_intake.releaseCommand(ItemType.Cone));
+    teleOpController.cross().whileTrue(m_intake.releaseCommand());
     teleOpController.cross().onFalse(m_intake.stopCommand());
 
 
     // Deploy the intake with the square button for the cube
     teleOpController.square().whileTrue(m_intake.intakeCommand(ItemType.Cube));
-    teleOpController.square().onFalse(m_intake.holdCommand(ItemType.Cube));
+    teleOpController.square().onFalse(m_intake.holdCommand());
     // Release the intake with the circle button for the cube
-    teleOpController.circle().whileTrue(m_intake.releaseCommand(ItemType.Cube));
+    teleOpController.circle().whileTrue(m_intake.releaseCommand());
     teleOpController.circle().onFalse(m_intake.stopCommand());
     
   }
