@@ -10,8 +10,8 @@
       "style": "0",
       "userScale": "2",
       "width": "1600",
-      "xpos": "213",
-      "ypos": "80"
+      "xpos": "-32000",
+      "ypos": "-32000"
     }
   },
   "Window": {
@@ -37,13 +37,13 @@
     },
     "###System Joysticks": {
       "Collapsed": "1",
-      "Pos": "6,437",
+      "Pos": "6,398",
       "Size": "340,254"
     },
     "###Timing": {
       "Collapsed": "0",
       "Pos": "6,187",
-      "Size": "162,142"
+      "Size": "162,168"
     },
     "Debug##Default": {
       "Collapsed": "0",

@@ -8,6 +8,7 @@ import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.subsystems.Drive;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Intake.ItemType;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -38,11 +39,21 @@ public class CommandBot {
     m_drive.setDefaultCommand( m_drive.arcadeDriveCommand(
             () -> -teleOpController.getLeftX(), () -> -teleOpController.getRightX()));
     
-    // Deploy the intake with the O button
-    teleOpController.circle().whileTrue(m_intake.intakeCommand());
-    teleOpController.circle().onFalse(m_intake.intakeCompleteCommand());
-    // Release the intake with the X button
-    teleOpController.cross().whileTrue(m_intake.releaseCommand());
+    // Deploy the intake with the triangle button for the cone
+    teleOpController.triangle().whileTrue(m_intake.intakeCommand(ItemType.Cone));
+    teleOpController.triangle().onFalse(m_intake.holdCommand(ItemType.Cone));
+    // Release the intake with the cross button for the cube
+    teleOpController.cross().whileTrue(m_intake.releaseCommand(ItemType.Cone));
+    teleOpController.cross().onFalse(m_intake.stopCommand());
+
+
+    // Deploy the intake with the square button for the cube
+    teleOpController.square().whileTrue(m_intake.intakeCommand(ItemType.Cube));
+    teleOpController.square().onFalse(m_intake.holdCommand(ItemType.Cube));
+    // Release the intake with the circle button for the cube
+    teleOpController.circle().whileTrue(m_intake.releaseCommand(ItemType.Cube));
+    teleOpController.circle().onFalse(m_intake.stopCommand());
+    
   }
 
   /**

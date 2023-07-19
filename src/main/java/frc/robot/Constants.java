@@ -33,20 +33,16 @@ public final class Constants {
         (kWheelDiameterMeters * Math.PI) / (double) kEncoderCPR;
   }
 
-  public static final class ShooterConstants {
-    public static final int[] kEncoderPorts = {4, 5};
-    public static final boolean kEncoderReversed = false;
-    public static final int kEncoderCPR = 1024;
-    public static final double kEncoderDistancePerPulse =
-        // Distance units will be rotations
-        1.0 / (double) kEncoderCPR;
-
-    // These are not real PID gains, and will have to be tuned for your specific robot.
-    public static final double kP = 1;
+  
+  public static final class IntakeConstants {
+    public static final int kMotorPort = 4;
   }
 
-  public static final class IntakeConstants {
-    public static final int kMotorPort = 6;
+  public static final class LiftConstants {
+    public static final String LIFT_RANGE_LABEL = "Lift Range";
+    public static final String LIFT_LOW_LIMIT = "Low Lift Limit";
+    public static final int LIFT_RT = 5; // Will change later
+    public static final int LIFT_LT = 6; // Will change later
   }
 
   public static final class AutoConstants {
