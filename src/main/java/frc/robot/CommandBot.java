@@ -8,6 +8,7 @@ import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.subsystems.Drive;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.LiftSubsystem;
 import frc.robot.subsystems.Intake.ItemType;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
@@ -23,7 +24,7 @@ public class CommandBot {
   // The robot's subsystems
   private final Drive m_drive = new Drive();
   private final Intake m_intake = new Intake();
-
+  private final LiftSubsystem m_lift = new LiftSubsystem();
   // The driver's controller
   CommandPS4Controller teleOpController =  new CommandPS4Controller(OIConstants.kDriverControllerPort);
   /**
@@ -53,6 +54,14 @@ public class CommandBot {
     // Release the intake with the circle button for the cube
     teleOpController.circle().whileTrue(m_intake.releaseCommand());
     teleOpController.circle().onFalse(m_intake.stopCommand());
+
+    teleOpController.L2().whileTrue(m_lift.raiseArmCommand(teleOpController));
+
+
+    //Lifting the arm
+    teleOpController.L2().whileTrue(m_lift.raiseArmCommand(() -> teleOpController.getL2Axis()));
+    // Lowering the arm
+    teleOpController.R2().whileTrue(m_lift.lowerArmCommand(() -> -teleOpController.getR2Axis()));
     
   }
 

@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import java.util.function.DoubleSupplier;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMax.IdleMode;
@@ -7,10 +9,13 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import frc.robot.Constants;
 import frc.robot.Constants.LiftConstants;
 
-public class LiftSubsystem {
+public class LiftSubsystem extends SubsystemBase{
     private final CANSparkMax liftMotorRt = new CANSparkMax(Constants.LiftConstants.LIFT_RT, MotorType.kBrushless);
     private final CANSparkMax liftMotorLt= new CANSparkMax(Constants.LiftConstants.LIFT_LT, MotorType.kBrushless);
     private final MotorControllerGroup a_rightMotors = new MotorControllerGroup(liftMotorRt);
@@ -52,48 +57,21 @@ public class LiftSubsystem {
     }
 
     // Returns true if target reached
-    public boolean moveToTarget(double target) {
-        target += SmartDashboard.getNumber(LiftConstants.LIFT_LOW_LIMIT, 0);
-        double curPos = m_encoder.getPosition();
-        double diff = curPos-target;
-        System.out.println("Moving lift to target:"+target+".. Diff:"+diff);
-        double speed = Math.abs(diff)>10?0.75:Math.abs(diff)>2?0.5:0.25;
-        if (diff>.5) { lowerArm(-speed); return false; }
-        else if (diff<-0.5) { raiseArm(speed); return false; }
-        else {stop(); return true;}
+   
+    public CommandBase raiseArmCommand(DoubleSupplier speed) {
+        return run(() -> {
+            lift.arcadeDrive(speed.getAsDouble(), 0);
+            System.out.println("Arm is lifting.... with speed: " + speed.getAsDouble());
+        }); 
     }
-
-    public void raiseArm(double speed) {
-        lowLimit = SmartDashboard.getNumber(LiftConstants.LIFT_LOW_LIMIT, 0);
-        double highLimit = lowLimit+liftRange;
-        if (m_encoder.getPosition()>highLimit) {
-            liftRange = SmartDashboard.getNumber(LiftConstants.LIFT_RANGE_LABEL, liftRange); // re=read from dashboard
-            highLimit = lowLimit+liftRange;
-            if (liftRange>0 && m_encoder.getPosition()>highLimit) {
-                System.out.println("Can't go higher than "+highLimit);
-                stop();
-                return;
-            }
-        }
-        System.out.println("raiseArm:"+speed);
-        stopped = false;
-        currSpeed = speed;
-        lift.arcadeDrive(speed, 0);
+    
+    public CommandBase lowerArmCommand(DoubleSupplier speed) {
+        return run(() -> {
+            lift.arcadeDrive(speed.getAsDouble(), 0);
+            System.out.println("Arm is lowering.... with speed: " + speed.getAsDouble());
+        });
     }
-
-    public void lowerArm(double speed) {
-        double liftRange = SmartDashboard.getNumber(LiftConstants.LIFT_RANGE_LABEL, 0);
-        double lowLimit = SmartDashboard.getNumber(LiftConstants.LIFT_LOW_LIMIT, 0);
-        if (liftRange>0 && m_encoder.getPosition()<lowLimit) {
-            System.out.println("Cant go lower!!!");
-            stop();
-            return;
-        }
-        System.out.println("lowerArm:"+speed);
-        stopped = false;
-        currSpeed = speed;
-        lift.arcadeDrive(speed, 0);
-    }
+    
 
     public boolean isStopped() {
         return stopped;
