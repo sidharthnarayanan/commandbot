@@ -55,7 +55,7 @@ public class CommandBot {
     teleOpController.circle().whileTrue(m_intake.releaseCommand());
     teleOpController.circle().onFalse(m_intake.stopCommand());
 
-    teleOpController.L2().whileTrue(m_lift.raiseArmCommand(teleOpController));
+    
 
 
     //Lifting the arm
