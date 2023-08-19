@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
-public class Intake extends SubsystemBase {
+public class IntakeSubSystem extends SubsystemBase {
     public enum ItemType {Cone, Cube};
     static final int INTAKE_CURRENT_LIMIT_A = 30; // How many amps the intake can use while picking up
     static final int INTAKE_HOLD_CURRENT_LIMIT_A = 5; // How many amps the intake can use while holding
@@ -17,7 +17,7 @@ public class Intake extends SubsystemBase {
     private final CANSparkMax intake;
     private ItemType currItemType;
 
-    public Intake() {
+    public IntakeSubSystem() {
         intake = new CANSparkMax(Constants.IntakeConstants.kMotorPort, MotorType.kBrushed);
         intake.setIdleMode(IdleMode.kCoast);
     }
@@ -28,8 +28,9 @@ public class Intake extends SubsystemBase {
         System.out.println("Intake " + itemType + " in progress");
         double speed = itemType==ItemType.Cube ? 1.0 : -1.0;
         currItemType = itemType;
-        intake.set(speed);
-        intake.setSmartCurrentLimit(INTAKE_CURRENT_LIMIT_A);
+        intake.set(speed); // makes the intake motor rotate at given speed
+        intake.setSmartCurrentLimit(INTAKE_CURRENT_LIMIT_A); // gives a limit for how much power, the 
+        // motor can receive
     }).withName("Intake");
   }
 

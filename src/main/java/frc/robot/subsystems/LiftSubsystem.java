@@ -11,7 +11,6 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
 import frc.robot.Constants;
 import frc.robot.Constants.LiftConstants;
 
@@ -64,35 +63,42 @@ public class LiftSubsystem extends SubsystemBase{
             System.out.println("Arm is lifting.... with speed: " + speed.getAsDouble());
         }); 
     }
-    
+
     public CommandBase lowerArmCommand(DoubleSupplier speed) {
         return run(() -> {
             lift.arcadeDrive(speed.getAsDouble(), 0);
             System.out.println("Arm is lowering.... with speed: " + speed.getAsDouble());
         });
     }
-    
+
+    public CommandBase arcadeDriveCommand(double speed) {
+        return run(() -> {
+            lift.arcadeDrive(speed, 0);
+            stopped = true;
+        }).withName("liftStopped");
+    }
+
+    public CommandBase liftCommand(DoubleSupplier raise) {
+        return run(() -> {
+          double speed = raise.getAsDouble();
+          if (speed>=0.05 || speed<=-0.05) {
+            System.out.println("liftCommand:"+speed);
+            stopped = false;
+          } else  {
+            speed = 0;
+            stopped = true;
+          }
+          lift.arcadeDrive(speed, 0);
+        }).withName("liftDrive");
+      }
 
     public boolean isStopped() {
         return stopped;
     }
 
-    public void stop() {
-        double currentPos = m_encoder.getPosition();
-        if (!stopped) {
-            currSpeed *= 0.5;
-            stoppedPos = currentPos;
-            if (currSpeed<0.25 && currSpeed>-0.25) {
-                lift.stopMotor();
-                stopped = true;
-                System.out.println("Stopped Lift at pos:"+stoppedPos);
-            } else
-                System.out.println("Slowing lift motor..speed:"+currSpeed);
-        }
-        lift.arcadeDrive(0, 0);  
-    }
-
     public double getCurrentSpeed() {
         return currSpeed;
     }
+
+    
 }

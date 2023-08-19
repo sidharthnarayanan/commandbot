@@ -4,16 +4,18 @@
 
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import frc.robot.Constants.DriveConstants;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
+import java.util.Date;
 import java.util.function.DoubleSupplier;
 
-public class Drive extends SubsystemBase {
+public class DifferentialDriveSubsystem extends SubsystemBase {
+  Date autonStart = null;
   // The motors on the left side of the drive.
   private final MotorControllerGroup m_leftMotors =
       new MotorControllerGroup(
@@ -29,30 +31,12 @@ public class Drive extends SubsystemBase {
   // The robot's drive
   private final DifferentialDrive m_drive = new DifferentialDrive(m_leftMotors, m_rightMotors);
 
-  // The left-side drive encoder
-  private final Encoder m_leftEncoder =
-      new Encoder(
-          DriveConstants.kLeftEncoderPorts[0],
-          DriveConstants.kLeftEncoderPorts[1],
-          DriveConstants.kLeftEncoderReversed);
-
-  // The right-side drive encoder
-  private final Encoder m_rightEncoder =
-      new Encoder(
-          DriveConstants.kRightEncoderPorts[0],
-          DriveConstants.kRightEncoderPorts[1],
-          DriveConstants.kRightEncoderReversed);
-
   /** Creates a new Drive subsystem. */
-  public Drive() {
+  public DifferentialDriveSubsystem() {
     // We need to invert one side of the drivetrain so that positive voltages
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
     m_rightMotors.setInverted(true);
-
-    // Sets the distance per pulse for the encoders
-    m_leftEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
-    m_rightEncoder.setDistancePerPulse(DriveConstants.kEncoderDistancePerPulse);
   }
 
   /**
@@ -65,32 +49,28 @@ public class Drive extends SubsystemBase {
     // A split-stick arcade command, with forward/backward controlled by the left
     // hand, and turning controlled by the right.
     return run(() -> {
-      if (fwd.getAsDouble()>=0.05 || rot.getAsDouble()>=0.05) 
+      if (fwd.getAsDouble()!=0 || rot.getAsDouble()!=0) 
         System.out.println("arcadeDrive:"+fwd.getAsDouble()+" with rot:"+rot.getAsDouble()); 
       m_drive.arcadeDrive(fwd.getAsDouble(), rot.getAsDouble());}
       ).withName("arcadeDrive");
   }
 
   /**
-   * Returns a command that drives the robot forward a specified distance at a specified speed.
+   * Returns a command that drives the robot forward for a specified time at a specified speed.
    *
-   * @param distanceMeters The distance to drive forward in meters
+   * @param timeInSec The time to drive forward in seconds
    * @param speed The fraction of max speed at which to drive
    */
-  public CommandBase driveDistanceCommand(double distanceMeters, double speed) {
+  public CommandBase driveTimeCommand(long timeInSec, double speed) {
     return runOnce(
             () -> {
-              // Reset encoders at the start of the command
-              m_leftEncoder.reset();
-              m_rightEncoder.reset();
+              autonStart = new Date();
             })
         // Drive forward at specified speed
         .andThen(run(() -> m_drive.arcadeDrive(speed, 0)))
         // End command when we've traveled the specified distance
         .until(
-            () ->
-                Math.max(m_leftEncoder.getDistance(), m_rightEncoder.getDistance())
-                    >= distanceMeters)
+            () ->  (new Date().getTime()-autonStart.getTime())/1000 >= timeInSec)
         // Stop the drive when the command ends
         .finallyDo(interrupted -> m_drive.stopMotor());
   }

@@ -5,13 +5,29 @@
 package frc.robot;
 
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
-import frc.robot.subsystems.Drive;
-import frc.robot.subsystems.Intake;
+import frc.robot.controller.PS4Controller;
+import frc.robot.controller.TeleOpController;
+import frc.robot.controller.XboxController;
+import frc.robot.subsystems.DifferentialDriveSubsystem;
+import frc.robot.subsystems.SwerveDriveSubsystem;
+import frc.robot.subsystems.IntakeSubSystem;
 import frc.robot.subsystems.LiftSubsystem;
-import frc.robot.subsystems.Intake.ItemType;
-import edu.wpi.first.wpilibj2.command.CommandBase;
-import edu.wpi.first.wpilibj2.command.button.CommandPS4Controller;
+import frc.robot.subsystems.IntakeSubSystem.ItemType;
+
+import java.util.List;
+
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 /**
@@ -21,12 +37,14 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class CommandBot {
-  // The robot's subsystems
-  private final Drive m_drive = new Drive();
-  private final Intake m_intake = new Intake();
+    // The robot's subsystems
+  private final SwerveDriveSubsystem s_drive = new SwerveDriveSubsystem(); // Swerve Drive
+  private final DifferentialDriveSubsystem d_drive = new DifferentialDriveSubsystem(); // Differential Drive
+  private final IntakeSubSystem m_intake = new IntakeSubSystem();
   private final LiftSubsystem m_lift = new LiftSubsystem();
-  // The driver's controller
-  CommandPS4Controller teleOpController =  new CommandPS4Controller(OIConstants.kDriverControllerPort);
+  TeleOpController teleOpController =  OIConstants.controllerType.equals("PS4") ? 
+              new PS4Controller(OIConstants.kDriverControllerPort) : 
+              new XboxController(OIConstants.kDriverControllerPort);
   /**
    ****** Use this method to define bindings between conditions and commands. These are useful for
    * automating robot behaviors based on button and sensor input.
@@ -36,33 +54,47 @@ public class CommandBot {
    * <p>Event binding methods are available on the {@link Trigger} class.
    */
   public void configureBindings() {
-    // Control the drive with split-stick arcade controls
-    m_drive.setDefaultCommand( m_drive.arcadeDriveCommand(
-            () -> -teleOpController.getLeftX(), () -> -teleOpController.getRightX()));
-    
-    // Deploy the intake with the triangle button for the cone
-    teleOpController.triangle().whileTrue(m_intake.intakeCommand(ItemType.Cone));
-    teleOpController.triangle().onFalse(m_intake.holdCommand());
-    // Release the intake with the cross button for the cube
-    teleOpController.cross().whileTrue(m_intake.releaseCommand());
-    teleOpController.cross().onFalse(m_intake.stopCommand());
 
+    if (DriveConstants.driveType.equals("DIFFER"))
+      // Control the differential drive with arcade controls
+      d_drive.setDefaultCommand(d_drive.arcadeDriveCommand(
+              () -> -teleOpController.getYSpeed(), () -> -teleOpController.getRotation()));
+    else
+    // Control the swerve drive with split-stick controls
+    // The left stick controls translation of the robot.
+    // Turning is controlled by the X axis of the right stick.
+      s_drive.setDefaultCommand( s_drive.driveCommand(
+        () -> -teleOpController.getXSpeed(), 
+        () -> -teleOpController.getYSpeed(),  
+        () -> -teleOpController.getRotation(), true, true));
+    /*s_drive.setDefaultCommand(
+     new RunCommand( () -> m_drive.drive(
+          -MathUtil.applyDeadband(teleOpController.getXSpeed(), OIConstants.kDriveDeadband),
+          -MathUtil.applyDeadband(teleOpController.getYSpeed(), OIConstants.kDriveDeadband),
+          -MathUtil.applyDeadband(teleOpController.getRotation(), OIConstants.kDriveDeadband),
+          true, true),
+          m_drive));
+    */
+    m_lift.setDefaultCommand(m_lift.arcadeDriveCommand(0));
+
+    // Deploy the intake with the triangle button for the cone
+    teleOpController.coneIntakeTrigger().whileTrue(m_intake.intakeCommand(ItemType.Cone));
+    teleOpController.coneIntakeTrigger().onFalse(m_intake.holdCommand());
+    // Release the intake with the cross button for the cube
+    teleOpController.releaseTrigger().whileTrue(m_intake.releaseCommand());
+    teleOpController.releaseTrigger().onFalse(m_intake.stopCommand());
 
     // Deploy the intake with the square button for the cube
-    teleOpController.square().whileTrue(m_intake.intakeCommand(ItemType.Cube));
-    teleOpController.square().onFalse(m_intake.holdCommand());
+    teleOpController.cubeIntakeTrigger().whileTrue(m_intake.intakeCommand(ItemType.Cube));
+    teleOpController.cubeIntakeTrigger().onFalse(m_intake.holdCommand());
     // Release the intake with the circle button for the cube
-    teleOpController.circle().whileTrue(m_intake.releaseCommand());
-    teleOpController.circle().onFalse(m_intake.stopCommand());
-
-    
-
+    teleOpController.releaseTrigger().whileTrue(m_intake.releaseCommand());
+    teleOpController.releaseTrigger().onFalse(m_intake.stopCommand());
 
     //Lifting the arm
-    teleOpController.L2().whileTrue(m_lift.raiseArmCommand(() -> teleOpController.getL2Axis()));
+    teleOpController.raiseArmTrigger().whileTrue(m_lift.raiseArmCommand(() -> teleOpController.getRaiseSpeed()));
     // Lowering the arm
-    teleOpController.R2().whileTrue(m_lift.lowerArmCommand(() -> -teleOpController.getR2Axis()));
-    
+    teleOpController.lowerArmTrigger().whileTrue(m_lift.lowerArmCommand(() -> -teleOpController.getLowerSpeed()));
   }
 
   /**
@@ -71,10 +103,44 @@ public class CommandBot {
    * <p>Scheduled during {@link Robot#autonomousInit()}.
    */
 
-  public CommandBase getAutonomousCommand() {
-    // Drive forward for 2 meters at half speed with a 3 second timeout
-    return m_drive
-        .driveDistanceCommand(AutoConstants.kDriveDistanceMeters, AutoConstants.kDriveSpeed)
-        .withTimeout(AutoConstants.kTimeoutSeconds);
-  }  
+   public Command getAutonomousCommand() {
+    // Create config for trajectory
+    TrajectoryConfig config = new TrajectoryConfig(
+        AutoConstants.kMaxSpeedMetersPerSecond,
+        AutoConstants.kMaxAccelerationMetersPerSecondSquared)
+        // Add kinematics to ensure max speed is actually obeyed
+        .setKinematics(DriveConstants.kDriveKinematics);
+
+    // An example trajectory to follow. All units in meters.
+    Trajectory exampleTrajectory = TrajectoryGenerator.generateTrajectory(
+        // Start at the origin facing the +X direction
+        new Pose2d(0, 0, new Rotation2d(0)),
+        // Pass through these two interior waypoints, making an 's' curve path
+        List.of(new Translation2d(1, 1), new Translation2d(2, -1)),
+        // End 3 meters straight ahead of where we started, facing forward
+        new Pose2d(3, 0, new Rotation2d(0)),
+        config);
+
+    var thetaController = new ProfiledPIDController(
+        AutoConstants.kPThetaController, 0, 0, AutoConstants.kThetaControllerConstraints);
+    thetaController.enableContinuousInput(-Math.PI, Math.PI);
+
+    SwerveControllerCommand swerveControllerCommand = new SwerveControllerCommand(
+        exampleTrajectory,
+        s_drive::getPose, // Functional interface to feed supplier
+        DriveConstants.kDriveKinematics,
+
+        // Position controllers
+        new PIDController(AutoConstants.kPXController, 0, 0),
+        new PIDController(AutoConstants.kPYController, 0, 0),
+        thetaController,
+        s_drive::setModuleStates,
+        s_drive);
+
+    // Reset odometry to the starting pose of the trajectory.
+    s_drive.resetOdometry(exampleTrajectory.getInitialPose());
+
+    // Run path following command, then stop at the end.
+    return swerveControllerCommand.andThen(() -> s_drive.drive(0, 0, 0, false, false));
+  } 
 }
