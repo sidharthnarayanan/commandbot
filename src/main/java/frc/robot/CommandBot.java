@@ -38,8 +38,8 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
  */
 public class CommandBot {
     // The robot's subsystems
-  private final SwerveDriveSubsystem s_drive = new SwerveDriveSubsystem(); // Swerve Drive
-  private final DifferentialDriveSubsystem d_drive = new DifferentialDriveSubsystem(); // Differential Drive
+  private SwerveDriveSubsystem s_drive;  // Swerve Drive
+  private DifferentialDriveSubsystem d_drive; // Differential Drive
   private final IntakeSubSystem m_intake = new IntakeSubSystem();
   private final LiftSubsystem m_lift = new LiftSubsystem();
   TeleOpController teleOpController =  OIConstants.controllerType.equals("PS4") ? 
@@ -55,11 +55,13 @@ public class CommandBot {
    */
   public void configureBindings() {
 
-    if (DriveConstants.driveType.equals("DIFFER"))
+    if (DriveConstants.driveType.equals("DIFFER")) {
+      d_drive = new DifferentialDriveSubsystem(); 
       // Control the differential drive with arcade controls
       d_drive.setDefaultCommand(d_drive.arcadeDriveCommand(
               () -> -teleOpController.getYSpeed(), () -> -teleOpController.getRotation()));
-    else
+    } else {
+      s_drive = new SwerveDriveSubsystem();
     // Control the swerve drive with split-stick controls
     // The left stick controls translation of the robot.
     // Turning is controlled by the X axis of the right stick.
@@ -67,6 +69,7 @@ public class CommandBot {
         () -> -teleOpController.getXSpeed(), 
         () -> -teleOpController.getYSpeed(),  
         () -> -teleOpController.getRotation(), true, true));
+    }
     /*s_drive.setDefaultCommand(
      new RunCommand( () -> m_drive.drive(
           -MathUtil.applyDeadband(teleOpController.getXSpeed(), OIConstants.kDriveDeadband),
