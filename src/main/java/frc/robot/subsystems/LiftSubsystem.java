@@ -71,6 +71,25 @@ public class LiftSubsystem extends SubsystemBase{
             System.out.println("Arm is lowering.... with speed: " + speed.getAsDouble());
         });
     }
+
+    public CommandBase stopArmCommand() {
+        return run(() -> {
+            double currentPos = m_encoder.getPosition();
+            if (!stopped) {
+                currSpeed *= 0.5;
+                stoppedPos = currentPos;
+                if (currSpeed<0.25 && currSpeed>-0.25) {
+                    lift.stopMotor();
+                    stopped = true;
+                    System.out.println("Stopped Lift at pos:"+stoppedPos);
+                } else
+                    System.out.println("Slowing lift motor..speed:"+currSpeed);
+            }
+            lift.arcadeDrive(0, 0);  
+        });
+    }
+
+
     
 
     public boolean isStopped() {

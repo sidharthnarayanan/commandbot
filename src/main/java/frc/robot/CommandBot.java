@@ -62,6 +62,7 @@ public class CommandBot {
     teleOpController.L2().whileTrue(m_lift.raiseArmCommand(() -> teleOpController.getL2Axis()));
     // Lowering the arm
     teleOpController.R2().whileTrue(m_lift.lowerArmCommand(() -> -teleOpController.getR2Axis()));
+    teleOpController.R1().whileTrue(m_lift.stopArmCommand());
     
   }
 
