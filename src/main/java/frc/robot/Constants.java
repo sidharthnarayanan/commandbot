@@ -21,12 +21,12 @@ import edu.wpi.first.math.util.Units;
  */
 public final class Constants {
   public static final class DriveConstants { 
-    public static final int kLeftMotor1Port = 0;
-    public static final int kLeftMotor2Port = 1;
-    public static final int kRightMotor1Port = 2;
-    public static final int kRightMotor2Port = 3;
+    public static final int kLeftMotor1Port = 17;
+    public static final int kLeftMotor2Port = 18;
+    public static final int kRightMotor1Port = 19;
+    public static final int kRightMotor2Port = 20;
 
-    public static final String driveType = "DIFFER";  // DIFF or SWERVE
+    public static final String driveType = "DIFFER";  // DIFFER or SWERVE
 
     // Driving Parameters - Note that these are not the maximum capable speeds of
     // the robot, rather the allowed maximum speeds

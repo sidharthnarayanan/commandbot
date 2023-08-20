@@ -14,22 +14,28 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.Date;
 import java.util.function.DoubleSupplier;
 
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
 public class DifferentialDriveSubsystem extends SubsystemBase {
   Date autonStart = null;
+
+  private final CANSparkMax m_rightDrive1 = new CANSparkMax(DriveConstants.kRightMotor1Port, MotorType.kBrushless); 
+  private final CANSparkMax m_rightDrive2 = new CANSparkMax(DriveConstants.kRightMotor2Port, MotorType.kBrushless);
+  private final CANSparkMax m_leftDrive1 = new CANSparkMax(DriveConstants.kLeftMotor1Port, MotorType.kBrushless);
+  private final CANSparkMax m_leftDrive2 = new CANSparkMax(DriveConstants.kLeftMotor2Port, MotorType.kBrushless);
+
   // The motors on the left side of the drive.
-  private final MotorControllerGroup m_leftMotors =
-      new MotorControllerGroup(
-          new PWMSparkMax(DriveConstants.kLeftMotor1Port),
-          new PWMSparkMax(DriveConstants.kLeftMotor2Port));
+  private final MotorControllerGroup m_leftMotors = new MotorControllerGroup(m_leftDrive1, m_leftDrive2);
 
   // The motors on the right side of the drive.
-  private final MotorControllerGroup m_rightMotors =
-      new MotorControllerGroup(
-          new PWMSparkMax(DriveConstants.kRightMotor1Port),
-          new PWMSparkMax(DriveConstants.kRightMotor2Port));
+  private final MotorControllerGroup m_rightMotors = new MotorControllerGroup(m_rightDrive1, m_rightDrive2);
 
   // The robot's drive
   private final DifferentialDrive m_drive = new DifferentialDrive(m_leftMotors, m_rightMotors);
+
+  RelativeEncoder rtEncoder1 = m_rightDrive1.getEncoder();
 
   /** Creates a new Drive subsystem. */
   public DifferentialDriveSubsystem() {

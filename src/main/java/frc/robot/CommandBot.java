@@ -104,6 +104,16 @@ public class CommandBot {
    */
 
    public Command getAutonomousCommand() {
+    return DriveConstants.driveType.equals("DIFFER")? getDiffAutonomousCommand() : getSwerveAutonomousCommand();
+  }
+
+   public Command getDiffAutonomousCommand() {
+    // Drive forward for 2 sec at half speed with a 3 second timeout
+    return d_drive.driveTimeCommand(2, 0.5)
+        .withTimeout(3);
+  }  
+
+   public Command getSwerveAutonomousCommand() {
     // Create config for trajectory
     TrajectoryConfig config = new TrajectoryConfig(
         AutoConstants.kMaxSpeedMetersPerSecond,
