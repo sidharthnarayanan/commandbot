@@ -40,8 +40,8 @@ public class CommandBot {
     // The robot's subsystems
   private SwerveDriveSubsystem s_drive;  // Swerve Drive
   private DifferentialDriveSubsystem d_drive; // Differential Drive
-  private final IntakeSubSystem m_intake = new IntakeSubSystem();
-  private final LiftSubsystem m_lift = new LiftSubsystem();
+  private IntakeSubSystem m_intake;
+  private LiftSubsystem m_lift;
   TeleOpController teleOpController =  OIConstants.controllerType.equals("PS4") ? 
               new PS4Controller(OIConstants.kDriverControllerPort) : 
               new XboxController(OIConstants.kDriverControllerPort);
@@ -54,7 +54,6 @@ public class CommandBot {
    * <p>Event binding methods are available on the {@link Trigger} class.
    */
   public void configureBindings() {
-
     if (DriveConstants.driveType.equals("DIFFER")) {
       d_drive = new DifferentialDriveSubsystem(); 
       // Control the differential drive with arcade controls
@@ -78,26 +77,32 @@ public class CommandBot {
           true, true),
           m_drive));
     */
-    m_lift.setDefaultCommand(m_lift.arcadeDriveCommand(0));
+    if (Constants.IntakeConstants.kMotorPort>=0) {
+      m_intake = new IntakeSubSystem();
+      // Deploy the intake with the triangle button for the cone
+      teleOpController.coneIntakeTrigger().whileTrue(m_intake.intakeCommand(ItemType.Cone));
+      teleOpController.coneIntakeTrigger().onFalse(m_intake.holdCommand());
+      // Release the intake with the cross button for the cube
+      teleOpController.releaseTrigger().whileTrue(m_intake.releaseCommand());
+      teleOpController.releaseTrigger().onFalse(m_intake.stopCommand());
+      // Deploy the intake with the square button for the cube
+      teleOpController.cubeIntakeTrigger().whileTrue(m_intake.intakeCommand(ItemType.Cube));
+      teleOpController.cubeIntakeTrigger().onFalse(m_intake.holdCommand());
+      // Release the intake with the circle button for the cube
+      teleOpController.releaseTrigger().whileTrue(m_intake.releaseCommand());
+      teleOpController.releaseTrigger().onFalse(m_intake.stopCommand());
+    } else 
+    m_intake = null;
 
-    // Deploy the intake with the triangle button for the cone
-    teleOpController.coneIntakeTrigger().whileTrue(m_intake.intakeCommand(ItemType.Cone));
-    teleOpController.coneIntakeTrigger().onFalse(m_intake.holdCommand());
-    // Release the intake with the cross button for the cube
-    teleOpController.releaseTrigger().whileTrue(m_intake.releaseCommand());
-    teleOpController.releaseTrigger().onFalse(m_intake.stopCommand());
-
-    // Deploy the intake with the square button for the cube
-    teleOpController.cubeIntakeTrigger().whileTrue(m_intake.intakeCommand(ItemType.Cube));
-    teleOpController.cubeIntakeTrigger().onFalse(m_intake.holdCommand());
-    // Release the intake with the circle button for the cube
-    teleOpController.releaseTrigger().whileTrue(m_intake.releaseCommand());
-    teleOpController.releaseTrigger().onFalse(m_intake.stopCommand());
-
-    //Lifting the arm
-    teleOpController.raiseArmTrigger().whileTrue(m_lift.raiseArmCommand(() -> teleOpController.getRaiseSpeed()));
-    // Lowering the arm
-    teleOpController.lowerArmTrigger().whileTrue(m_lift.lowerArmCommand(() -> -teleOpController.getLowerSpeed()));
+    if (Constants.LiftConstants.LIFT_RT>=0) {
+      m_lift = new LiftSubsystem();
+      m_lift.setDefaultCommand(m_lift.arcadeDriveCommand(0));
+      //Lifting the arm
+      teleOpController.raiseArmTrigger().whileTrue(m_lift.raiseArmCommand(() -> teleOpController.getRaiseSpeed()));
+      // Lowering the arm
+      teleOpController.lowerArmTrigger().whileTrue(m_lift.lowerArmCommand(() -> -teleOpController.getLowerSpeed()));
+    } else 
+      m_lift = null;
   }
 
   /**
