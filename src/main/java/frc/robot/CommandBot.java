@@ -11,11 +11,13 @@ import frc.robot.controller.PS4Controller;
 import frc.robot.controller.TeleOpController;
 import frc.robot.controller.XboxController;
 import frc.robot.subsystems.DifferentialDriveSubsystem;
+import frc.robot.subsystems.GyroSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.IntakeSubSystem;
 import frc.robot.subsystems.LiftSubsystem;
 import frc.robot.subsystems.IntakeSubSystem.ItemType;
 
+import java.util.Date;
 import java.util.List;
 
 import edu.wpi.first.math.controller.PIDController;
@@ -27,6 +29,7 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
@@ -40,6 +43,7 @@ public class CommandBot {
     // The robot's subsystems
   private SwerveDriveSubsystem s_drive;  // Swerve Drive
   private DifferentialDriveSubsystem d_drive; // Differential Drive
+  private Subsystem drive;
   private IntakeSubSystem m_intake;
   private LiftSubsystem m_lift;
   TeleOpController teleOpController =  OIConstants.controllerType.equals("PS4") ? 
@@ -56,11 +60,13 @@ public class CommandBot {
   public void configureBindings() {
     if (DriveConstants.driveType.equals("DIFFER")) {
       d_drive = new DifferentialDriveSubsystem(); 
+      drive = d_drive;
       // Control the differential drive with arcade controls
       d_drive.setDefaultCommand(d_drive.arcadeDriveCommand(
               () -> -teleOpController.getYSpeed(), () -> -teleOpController.getRotation()));
     } else {
       s_drive = new SwerveDriveSubsystem();
+      drive = s_drive;
     // Control the swerve drive with split-stick controls
     // The left stick controls translation of the robot.
     // Turning is controlled by the X axis of the right stick.
@@ -111,15 +117,25 @@ public class CommandBot {
    * <p>Scheduled during {@link Robot#autonomousInit()}.
    */
 
-   public Command getAutonomousCommand() {
-    return DriveConstants.driveType.equals("DIFFER")? getDiffAutonomousCommand() : getSwerveAutonomousCommand();
+   public Command getAutonomousCommand(Date autoStartTime) {
+    return DriveConstants.driveType.equals("DIFFER")? getDiffAutonomousCommand() : getSwerveAutonCommand(autoStartTime);
   }
 
    public Command getDiffAutonomousCommand() {
     // Drive forward for 2 sec at half speed with a 3 second timeout
     return d_drive.driveTimeCommand(2, 0.5)
         .withTimeout(3);
-  }  
+  }
+
+
+  public Command getSwerveAutonCommand(Date autoStartTime) {
+    return s_drive.getSwerveAutonomousCommand1(autoStartTime);
+  }
+
+  void periodic() {
+    drive.periodic();
+    GyroSubsystem.getInstance().periodic();
+  }
 
    public Command getSwerveAutonomousCommand() {
     // Create config for trajectory

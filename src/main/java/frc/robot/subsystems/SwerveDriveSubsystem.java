@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import java.util.Date;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -63,7 +64,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // Update the odometry in the periodic block
+    // Update the odometry
     m_odometry.update(
         Rotation2d.fromDegrees(m_gyro.getAngle()),
         new SwerveModulePosition[] {
@@ -105,6 +106,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
       if (xSpeed.getAsDouble()!=0 || ySpeed.getAsDouble()!=0 || rot.getAsDouble()!=0)
         System.out.println("swerveDrive: x="+xSpeed.getAsDouble()+", y="+ySpeed.getAsDouble()+", r="+rot.getAsDouble()); 
       this.drive(xSpeed.getAsDouble(), ySpeed.getAsDouble(), rot.getAsDouble(), fieldRelative, rateLimit);
+      periodic();
     }
     ).withName("swerveDrive");
   }
@@ -123,7 +125,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     
     double xSpeedCommanded;
     double ySpeedCommanded;
-
+    System.out.println("SDrive..xspeed:"+xSpeed+", yspeed:"+ySpeed+", rot:"+rot);
     if (rateLimit) {
       // Convert XY to polar for rate limiting
       double inputTranslationDir = Math.atan2(ySpeed, xSpeed);
@@ -243,4 +245,15 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   public double getTurnRate() {
     return m_gyro.getRate() * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
   }
+
+  public CommandBase getSwerveAutonomousCommand1(Date autonStartTime) {
+    long timeInSec = 2; 
+    return run(() -> this.drive(0.2,0.2,0,true, true))
+        // End command when we've traveled the specified amount of time
+        .until(
+            () ->  (new Date().getTime()-autonStartTime.getTime())/1000 >= timeInSec)
+        // Stop the drive when the command ends
+        .finallyDo(interrupted -> this.drive(0,0,0,true, true));
+  }
+
 }

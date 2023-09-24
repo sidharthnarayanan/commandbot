@@ -75,7 +75,7 @@ public class GyroSubsystem {
         simulatedPitch = 0;
     }
 
-    public void periodic(long tickCount) {
+    public void periodic() {
         //System.out.println("gyroP:"+gyro.getPitch()+", gyroR:"+gyro.getDegrees());
         //if ((tickCount & 0x1111) == 0x1111) 
         {
