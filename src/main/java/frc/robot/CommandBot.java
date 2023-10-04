@@ -7,6 +7,7 @@ package frc.robot;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
+import frc.robot.controller.AutonController;
 import frc.robot.controller.PS4Controller;
 import frc.robot.controller.TeleOpController;
 import frc.robot.controller.XboxController;
@@ -17,6 +18,7 @@ import frc.robot.subsystems.IntakeSubSystem;
 import frc.robot.subsystems.LiftSubsystem;
 import frc.robot.subsystems.IntakeSubSystem.ItemType;
 
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 
@@ -28,6 +30,8 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.math.trajectory.TrajectoryUtil;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
@@ -59,13 +63,12 @@ public class CommandBot {
    */
   public void configureBindings() {
     if (DriveConstants.driveType.equals("DIFFER")) {
-      d_drive = new DifferentialDriveSubsystem(); 
+      d_drive = DifferentialDriveSubsystem.getInstance(); 
       drive = d_drive;
-      // Control the differential drive with arcade controls
-      d_drive.setDefaultCommand(d_drive.arcadeDriveCommand(
-              () -> -teleOpController.getYSpeed(), () -> -teleOpController.getRotation()));
+      // Note: Pass lamdba fn to get speed/rot and not the current speed/rot
+      d_drive.setDefaultCommand(d_drive.driveCommand(() -> -teleOpController.getYSpeed(), () -> -teleOpController.getRotation()));
     } else {
-      s_drive = new SwerveDriveSubsystem();
+      s_drive = SwerveDriveSubsystem.getInstance();
       drive = s_drive;
     // Control the swerve drive with split-stick controls
     // The left stick controls translation of the robot.
@@ -75,14 +78,6 @@ public class CommandBot {
         () -> -teleOpController.getYSpeed(),  
         () -> -teleOpController.getRotation(), true, true));
     }
-    /*s_drive.setDefaultCommand(
-     new RunCommand( () -> m_drive.drive(
-          -MathUtil.applyDeadband(teleOpController.getXSpeed(), OIConstants.kDriveDeadband),
-          -MathUtil.applyDeadband(teleOpController.getYSpeed(), OIConstants.kDriveDeadband),
-          -MathUtil.applyDeadband(teleOpController.getRotation(), OIConstants.kDriveDeadband),
-          true, true),
-          m_drive));
-    */
     if (Constants.IntakeConstants.kMotorPort>=0) {
       m_intake = new IntakeSubSystem();
       // Deploy the intake with the triangle button for the cone
@@ -118,18 +113,7 @@ public class CommandBot {
    */
 
    public Command getAutonomousCommand(Date autoStartTime) {
-    return DriveConstants.driveType.equals("DIFFER")? getDiffAutonomousCommand() : getSwerveAutonCommand(autoStartTime);
-  }
-
-   public Command getDiffAutonomousCommand() {
-    // Drive forward for 2 sec at half speed with a 3 second timeout
-    return d_drive.driveTimeCommand(2, 0.5)
-        .withTimeout(3);
-  }
-
-
-  public Command getSwerveAutonCommand(Date autoStartTime) {
-    return s_drive.getSwerveAutonomousCommand1(autoStartTime);
+    return AutonController.getAutonCommand();
   }
 
   void periodic() {
@@ -137,7 +121,7 @@ public class CommandBot {
     GyroSubsystem.getInstance().periodic();
   }
 
-   public Command getSwerveAutonomousCommand() {
+  public Command getSwerveAutonomousCommand() {
     // Create config for trajectory
     TrajectoryConfig config = new TrajectoryConfig(
         AutoConstants.kMaxSpeedMetersPerSecond,
@@ -146,15 +130,23 @@ public class CommandBot {
         .setKinematics(DriveConstants.kDriveKinematics);
 
     // An example trajectory to follow. All units in meters.
-    Trajectory exampleTrajectory = TrajectoryGenerator.generateTrajectory(
-        // Start at the origin facing the +X direction
-        new Pose2d(0, 0, new Rotation2d(0)),
-        // Pass through these two interior waypoints, making an 's' curve path
-        List.of(new Translation2d(1, 1), new Translation2d(2, -1)),
-        // End 3 meters straight ahead of where we started, facing forward
-        new Pose2d(3, 0, new Rotation2d(0)),
-        config);
-
+    Trajectory exampleTrajectory;
+    String trajectoryJSON = "paths/test.json";
+    try {
+      Path trajectoryPath = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
+      exampleTrajectory = TrajectoryUtil.fromPathweaverJson(trajectoryPath);
+    } catch (Exception e ) {
+      System.out.println(e.getMessage());
+      exampleTrajectory = TrajectoryGenerator.generateTrajectory(
+    // Start at the origin facing the +X direction
+    new Pose2d(0, 0, new Rotation2d(0)),
+    // Pass through these two interior waypoints, making an 's' curve path
+    List.of(new Translation2d(1, 1), new Translation2d(2, -1)),
+    // End 3 meters straight ahead of where we started, facing forward
+    new Pose2d(3, 0, new Rotation2d(0)),
+    config);
+  }
+       
     var thetaController = new ProfiledPIDController(
         AutoConstants.kPThetaController, 0, 0, AutoConstants.kThetaControllerConstraints);
     thetaController.enableContinuousInput(-Math.PI, Math.PI);

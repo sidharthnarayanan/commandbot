@@ -1,6 +1,5 @@
 package frc.robot.subsystems;
 
-import java.util.Date;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -62,6 +61,17 @@ public class SwerveDriveSubsystem extends SubsystemBase {
           m_rearRight.getPosition()
       });
 
+  static SwerveDriveSubsystem self;
+
+  private SwerveDriveSubsystem() {
+
+  }
+
+  static public SwerveDriveSubsystem getInstance() {
+    if (self==null) self = new SwerveDriveSubsystem(); 
+    return self;
+  }
+
   @Override
   public void periodic() {
     // Update the odometry
@@ -102,10 +112,12 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   }
 
   public CommandBase driveCommand(DoubleSupplier xSpeed, DoubleSupplier ySpeed, DoubleSupplier rot, boolean fieldRelative, boolean rateLimit) {
-    return run(() -> {
-      if (xSpeed.getAsDouble()!=0 || ySpeed.getAsDouble()!=0 || rot.getAsDouble()!=0)
-        System.out.println("swerveDrive: x="+xSpeed.getAsDouble()+", y="+ySpeed.getAsDouble()+", r="+rot.getAsDouble()); 
-      this.drive(xSpeed.getAsDouble(), ySpeed.getAsDouble(), rot.getAsDouble(), fieldRelative, rateLimit);
+    return driveCommand(xSpeed.getAsDouble(), ySpeed.getAsDouble(), rot.getAsDouble(), fieldRelative, rateLimit);
+  }
+  
+  public CommandBase driveCommand(Double xSpeed, Double ySpeed, Double rot, boolean fieldRelative, boolean rateLimit) {
+  return run(() -> {
+      this.drive(xSpeed, ySpeed, rot, fieldRelative, rateLimit);
       periodic();
     }
     ).withName("swerveDrive");
@@ -122,10 +134,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
    * @param rateLimit     Whether to enable rate limiting for smoother control.
    */
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative, boolean rateLimit) {
-    
     double xSpeedCommanded;
     double ySpeedCommanded;
-    System.out.println("SDrive..xspeed:"+xSpeed+", yspeed:"+ySpeed+", rot:"+rot);
+    if (xSpeed!=0 || ySpeed!=0 || rot!=0)
+      System.out.println("SDrive..xspeed:"+xSpeed+", yspeed:"+ySpeed+", rot:"+rot);
     if (rateLimit) {
       // Convert XY to polar for rate limiting
       double inputTranslationDir = Math.atan2(ySpeed, xSpeed);
@@ -246,14 +258,7 @@ public class SwerveDriveSubsystem extends SubsystemBase {
     return m_gyro.getRate() * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
   }
 
-  public CommandBase getSwerveAutonomousCommand1(Date autonStartTime) {
-    long timeInSec = 2; 
-    return run(() -> this.drive(0.2,0.2,0,true, true))
-        // End command when we've traveled the specified amount of time
-        .until(
-            () ->  (new Date().getTime()-autonStartTime.getTime())/1000 >= timeInSec)
-        // Stop the drive when the command ends
-        .finallyDo(interrupted -> this.drive(0,0,0,true, true));
+  public CommandBase driveTimeCommand(long timeInSec, double xspeed, double yspeed, double rotation, boolean fieldRelative, boolean rateLimit) {
+    return driveCommand(xspeed, yspeed, rotation, fieldRelative, rateLimit).withTimeout(timeInSec);
   }
-
 }

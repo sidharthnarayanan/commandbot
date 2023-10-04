@@ -36,12 +36,19 @@ public class DifferentialDriveSubsystem extends SubsystemBase {
 
   RelativeEncoder rtEncoder1 = m_rightDrive1.getEncoder();
 
+  static DifferentialDriveSubsystem self;
+
   /** Creates a new Drive subsystem. */
-  public DifferentialDriveSubsystem() {
+  private DifferentialDriveSubsystem() {
     // We need to invert one side of the drivetrain so that positive voltages
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
     m_rightMotors.setInverted(true);
+  }
+
+  static public DifferentialDriveSubsystem getInstance() {
+    if (self==null) self = new DifferentialDriveSubsystem();
+    return self;
   }
 
   /**
@@ -50,14 +57,19 @@ public class DifferentialDriveSubsystem extends SubsystemBase {
    * @param fwd the commanded forward movement
    * @param rot the commanded rotation
    */
-  public CommandBase arcadeDriveCommand(DoubleSupplier fwd, DoubleSupplier rot) {
-    // A split-stick arcade command, with forward/backward controlled by the left
-    // hand, and turning controlled by the right.
-    return run(() -> {
-      if (fwd.getAsDouble()!=0 || rot.getAsDouble()!=0) 
-        System.out.println("arcadeDrive:"+fwd.getAsDouble()+" with rot:"+rot.getAsDouble()); 
-      m_drive.arcadeDrive(fwd.getAsDouble(), rot.getAsDouble());}
-      ).withName("arcadeDrive");
+  public CommandBase driveCommand(DoubleSupplier speed, DoubleSupplier rotation) {
+    return driveCommand(speed.getAsDouble(), rotation.getAsDouble());
+  }
+
+  public CommandBase driveCommand(Double speed, Double rotation) {
+    return run(() -> { this.drive(speed, rotation); }).withName("diffDrive");
+  }
+
+  public void drive(double speed, double rotation) {
+    if (speed!=0 || rotation!=0) 
+        System.out.println("arcadeDrive:"+speed+" with rot:"+rotation); 
+    // A split-stick arcade command
+    m_drive.arcadeDrive(speed, rotation);
   }
 
   /**
@@ -66,17 +78,7 @@ public class DifferentialDriveSubsystem extends SubsystemBase {
    * @param timeInSec The time to drive forward in seconds
    * @param speed The fraction of max speed at which to drive
    */
-  public CommandBase driveTimeCommand(long timeInSec, double speed) {
-    return runOnce(
-            () -> {
-              autonStart = new Date();
-            })
-        // Drive forward at specified speed
-        .andThen(run(() -> m_drive.arcadeDrive(speed, 0)))
-        // End command when we've traveled the specified distance
-        .until(
-            () ->  (new Date().getTime()-autonStart.getTime())/1000 >= timeInSec)
-        // Stop the drive when the command ends
-        .finallyDo(interrupted -> m_drive.stopMotor());
+  public CommandBase driveTimeCommand(long timeInSec, double speed, double rotation) {
+    return driveCommand(speed, rotation).withTimeout(timeInSec);
   }
 }

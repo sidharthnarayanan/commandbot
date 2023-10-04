@@ -11,7 +11,7 @@ public class GyroSubsystem {
     final AHRS ahrsGyro = new AHRS(SerialPort.Port.kUSB);
     double simulatedYaw = 0, simulatedPitch=0;
     static GyroSubsystem self; // singleton
-    private AccelerometerSubsystem acc = AccelerometerSubsystem.getInstance();
+    //private AccelerometerSubsystem acc = AccelerometerSubsystem.getInstance();
 
     public static final String GYRO_PITCH="Gyro Pitch";
     public static final String GYRO_ROLL="Gyro Roll";
