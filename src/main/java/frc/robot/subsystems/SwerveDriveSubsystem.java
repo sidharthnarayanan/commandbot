@@ -61,14 +61,14 @@ public class SwerveDriveSubsystem extends SubsystemBase {
           m_rearRight.getPosition()
       });
 
-  static SwerveDriveSubsystem self;
+  static SwerveDriveSubsystem self = null;
 
   private SwerveDriveSubsystem() {
-
+    System.out.println("Swerve Drive Subsystem Created");
   }
 
   static public SwerveDriveSubsystem getInstance() {
-    if (self==null) self = new SwerveDriveSubsystem(); 
+    if (self==null) self = new SwerveDriveSubsystem();
     return self;
   }
 
@@ -112,7 +112,10 @@ public class SwerveDriveSubsystem extends SubsystemBase {
   }
 
   public CommandBase driveCommand(DoubleSupplier xSpeed, DoubleSupplier ySpeed, DoubleSupplier rot, boolean fieldRelative, boolean rateLimit) {
-    return driveCommand(xSpeed.getAsDouble(), ySpeed.getAsDouble(), rot.getAsDouble(), fieldRelative, rateLimit);
+    return run(() -> {
+      this.drive(xSpeed.getAsDouble(), ySpeed.getAsDouble(), rot.getAsDouble(), fieldRelative, rateLimit);
+    }
+    ).withName("swerveDrive");
   }
   
   public CommandBase driveCommand(Double xSpeed, Double ySpeed, Double rot, boolean fieldRelative, boolean rateLimit) {
