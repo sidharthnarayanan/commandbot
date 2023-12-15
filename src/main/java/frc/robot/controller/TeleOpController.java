@@ -9,6 +9,7 @@ public interface TeleOpController {
     Trigger cubeIntakeTrigger();
 
     // Drive Bindings
+    Trigger moveTrigger();
     double getXSpeed();
     double getYSpeed();
     double getRotation();

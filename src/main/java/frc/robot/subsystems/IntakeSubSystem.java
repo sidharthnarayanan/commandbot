@@ -25,13 +25,17 @@ public class IntakeSubSystem extends SubsystemBase {
      /** Returns a command that grabs the item */
   public CommandBase intakeCommand(ItemType itemType) {
     return run(() -> {
+      doIntake(itemType);
+    }).withName("Intake");
+  }
+
+  public void doIntake(ItemType itemType) {
         System.out.println("Intake " + itemType + " in progress");
         double speed = itemType==ItemType.Cube ? 1.0 : -1.0;
         currItemType = itemType;
         intake.set(speed); // makes the intake motor rotate at given speed
         intake.setSmartCurrentLimit(INTAKE_CURRENT_LIMIT_A); // gives a limit for how much power, the 
         // motor can receive
-    }).withName("Intake");
   }
 
   public CommandBase holdCommand() {

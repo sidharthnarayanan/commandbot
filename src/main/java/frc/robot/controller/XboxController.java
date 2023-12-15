@@ -11,6 +11,11 @@ public class XboxController implements TeleOpController{
     }
 
     @Override
+    public Trigger moveTrigger() {
+        return xboxController.leftTrigger();
+    }
+
+    @Override
     public Trigger releaseTrigger() {
         return xboxController.a();
     }

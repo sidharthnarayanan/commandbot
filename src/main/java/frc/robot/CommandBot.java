@@ -33,55 +33,69 @@ import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.math.trajectory.TrajectoryUtil;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 /**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
+ * This class is where the bulk of the robot should be declared. Since
+ * Command-based is a
+ * "declarative" paradigm, very little robot logic should actually be handled in
+ * the {@link Robot}
+ * periodic methods (other than the scheduler calls). Instead, the structure of
+ * the robot (including
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class CommandBot {
-    // The robot's subsystems
-  private SwerveDriveSubsystem s_drive;  // Swerve Drive
+  // The robot's subsystems
+  private SwerveDriveSubsystem s_drive; // Swerve Drive
   private DifferentialDriveSubsystem d_drive; // Differential Drive
   private Subsystem drive;
   private IntakeSubSystem m_intake;
   private LiftSubsystem m_lift;
-  TeleOpController teleOpController =  OIConstants.controllerType.equals("PS4") ? 
-              new PS4Controller(OIConstants.kDriverControllerPort) : 
-              new XboxController(OIConstants.kDriverControllerPort);
+  TeleOpController teleOpController = OIConstants.controllerType.equals("PS4")
+      ? new PS4Controller(OIConstants.kDriverControllerPort)
+      : new XboxController(OIConstants.kDriverControllerPort);
+
   /**
-   ****** Use this method to define bindings between conditions and commands. These are useful for
+   ****** Use this method to define bindings between conditions and commands. These are
+   * useful for
    * automating robot behaviors based on button and sensor input.
    *
-   * <p>Should be called during {@link Robot#robotInit()}.
+   * <p>
+   * Should be called during {@link Robot#robotInit()}.
    *
-   * <p>Event binding methods are available on the {@link Trigger} class.
+   * <p>
+   * Event binding methods are available on the {@link Trigger} class.
    */
   public void configureBindings() {
-    if (DriveConstants.driveType.equals("DIFFER")) {
-      d_drive = DifferentialDriveSubsystem.getInstance(); 
+    System.out.println("Configring Bindings with driveType:" + DriveConstants.driveType);
+    if (DriveConstants.driveType.startsWith("DIFF")) {
+      d_drive = DifferentialDriveSubsystem.getInstance();
       drive = d_drive;
       // Note: Pass lamdba fn to get speed/rot and not the current speed/rot
-      d_drive.setDefaultCommand(d_drive.driveCommand(() -> -teleOpController.getYSpeed(), () -> -teleOpController.getRotation()));
+      d_drive.setDefaultCommand(
+          d_drive.driveCommand(() -> -teleOpController.getYSpeed(), () -> -teleOpController.getRotation()));
     } else {
       s_drive = SwerveDriveSubsystem.getInstance();
       drive = s_drive;
-    // Control the swerve drive with split-stick controls
-    // The left stick controls translation of the robot.
-    // Turning is controlled by the X axis of the right stick.
-      s_drive.setDefaultCommand( s_drive.driveCommand(
-        () -> -teleOpController.getXSpeed(), 
-        () -> -teleOpController.getYSpeed(),  
-        () -> -teleOpController.getRotation(), true, true));
+      // Control the swerve drive with split-stick controls
+      s_drive.setDefaultCommand(s_drive.driveCommand(
+          () -> -teleOpController.getXSpeed(),
+          () -> -teleOpController.getYSpeed(),
+          () -> -teleOpController.getRotation(), true, true));
+      /*
+       * teleOpController.moveTrigger().whileTrue(s_drive.driveCommand(() ->
+       * -teleOpController.getXSpeed(),
+       * () -> -teleOpController.getYSpeed(),
+       * () -> -teleOpController.getRotation(), true, true));
+       */
     }
-    if (Constants.IntakeConstants.kMotorPort>=0) {
+    if (Constants.IntakeConstants.kMotorPort >= 0) {
       m_intake = new IntakeSubSystem();
       // Deploy the intake with the triangle button for the cone
-      teleOpController.coneIntakeTrigger().whileTrue(m_intake.intakeCommand(ItemType.Cone));
+      teleOpController.coneIntakeTrigger().whileTrue(Commands.run(() -> {m_intake.doIntake(ItemType.Cone);}));
       teleOpController.coneIntakeTrigger().onFalse(m_intake.holdCommand());
       // Release the intake with the cross button for the cube
       teleOpController.releaseTrigger().whileTrue(m_intake.releaseCommand());
@@ -92,27 +106,26 @@ public class CommandBot {
       // Release the intake with the circle button for the cube
       teleOpController.releaseTrigger().whileTrue(m_intake.releaseCommand());
       teleOpController.releaseTrigger().onFalse(m_intake.stopCommand());
-    } else 
-    m_intake = null;
+    }
 
-    if (Constants.LiftConstants.LIFT_RT>=0) {
+    if (Constants.LiftConstants.LIFT_RT >= 0) {
       m_lift = new LiftSubsystem();
       m_lift.setDefaultCommand(m_lift.arcadeDriveCommand(0));
-      //Lifting the arm
+      // Lifting the arm
       teleOpController.raiseArmTrigger().whileTrue(m_lift.raiseArmCommand(() -> teleOpController.getRaiseSpeed()));
       // Lowering the arm
       teleOpController.lowerArmTrigger().whileTrue(m_lift.lowerArmCommand(() -> -teleOpController.getLowerSpeed()));
-    } else 
-      m_lift = null;
+    }
   }
 
   /**
    * Use this to define the command that runs during autonomous.
    *
-   * <p>Scheduled during {@link Robot#autonomousInit()}.
+   * <p>
+   * Scheduled during {@link Robot#autonomousInit()}.
    */
 
-   public Command getAutonomousCommand(Date autoStartTime) {
+  public Command getAutonomousCommand(Date autoStartTime) {
     return AutonController.getAutonCommand();
   }
 
@@ -135,18 +148,18 @@ public class CommandBot {
     try {
       Path trajectoryPath = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
       exampleTrajectory = TrajectoryUtil.fromPathweaverJson(trajectoryPath);
-    } catch (Exception e ) {
+    } catch (Exception e) {
       System.out.println(e.getMessage());
       exampleTrajectory = TrajectoryGenerator.generateTrajectory(
-    // Start at the origin facing the +X direction
-    new Pose2d(0, 0, new Rotation2d(0)),
-    // Pass through these two interior waypoints, making an 's' curve path
-    List.of(new Translation2d(1, 1), new Translation2d(2, -1)),
-    // End 3 meters straight ahead of where we started, facing forward
-    new Pose2d(3, 0, new Rotation2d(0)),
-    config);
-  }
-       
+          // Start at the origin facing the +X direction
+          new Pose2d(0, 0, new Rotation2d(0)),
+          // Pass through these two interior waypoints, making an 's' curve path
+          List.of(new Translation2d(1, 1), new Translation2d(2, -1)),
+          // End 3 meters straight ahead of where we started, facing forward
+          new Pose2d(3, 0, new Rotation2d(0)),
+          config);
+    }
+
     var thetaController = new ProfiledPIDController(
         AutoConstants.kPThetaController, 0, 0, AutoConstants.kThetaControllerConstraints);
     thetaController.enableContinuousInput(-Math.PI, Math.PI);
@@ -168,5 +181,5 @@ public class CommandBot {
 
     // Run path following command, then stop at the end.
     return swerveControllerCommand.andThen(() -> s_drive.drive(0, 0, 0, false, false));
-  } 
+  }
 }

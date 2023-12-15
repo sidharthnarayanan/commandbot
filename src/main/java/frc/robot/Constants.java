@@ -124,14 +124,14 @@ public final class Constants {
   }
   
   public static final class IntakeConstants {
-    public static final int kMotorPort = -1; // 4
+    public static final int kMotorPort = 9;
   }
 
   public static final class LiftConstants {
     public static final String LIFT_RANGE_LABEL = "Lift Range";
     public static final String LIFT_LOW_LIMIT = "Low Lift Limit";
-    public static final int LIFT_RT = -1; // 5
-    public static final int LIFT_LT = -1; // 6
+    public static final int LIFT_RT = 10;
+    public static final int LIFT_LT = 11;
   }
 
   public static final class AutoConstants {
