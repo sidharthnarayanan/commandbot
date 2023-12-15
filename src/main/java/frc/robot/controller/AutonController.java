@@ -15,8 +15,14 @@ public class AutonController {
 
     private static CommandBase getSwerveAutonCommand() {
         SequentialCommandGroup commandGroup = new SequentialCommandGroup();
-        commandGroup.addCommands(new SwerveDriveForDurationCommand(2,0.2,0.3,0.0));
-        commandGroup.addCommands(SwerveDriveSubsystem.getInstance().driveTimeCommand(3, 0.3, 0.1, 0.4, true, true));
+        commandGroup.addCommands(new SwerveDriveForDurationCommand(2,0.05,0,0.0));
+        commandGroup.addCommands(new SwerveDriveForDurationCommand(2,-0.05,0,0.0));
+        commandGroup.addCommands(new SwerveDriveForDurationCommand(2,0,0.05,0.0));
+        commandGroup.addCommands(new SwerveDriveForDurationCommand(2,0,-0.05,0.0));
+        commandGroup.addCommands(new SwerveDriveForDurationCommand(2,0,0,0.2));
+        commandGroup.addCommands(new SwerveDriveForDurationCommand(2,0.1,0.1,0.0));
+
+       // commandGroup.addCommands(SwerveDriveSubsystem.getInstance().driveTimeCommand(5, 0.05, 0.05, 0.0, true, true));
         return commandGroup;
     }
 
