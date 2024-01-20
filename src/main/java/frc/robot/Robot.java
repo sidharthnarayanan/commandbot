@@ -62,6 +62,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
+    GyroSubsystem.getInstance().init();
+
     m_autonomousCommand = m_robot.getAutonomousCommand(new Date());
 
     if (m_autonomousCommand != null) {
